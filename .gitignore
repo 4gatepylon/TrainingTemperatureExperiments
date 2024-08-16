@@ -166,3 +166,5 @@ cython_debug/
 *.pth
 data/
 results/
+
+.DS_Store
