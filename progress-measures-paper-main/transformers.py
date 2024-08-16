@@ -451,6 +451,11 @@ def full_loss(config : Config, model: Transformer, data):
     labels = t.tensor([config.fn(i, j) for i, j, _ in data]).to(config.device)
     return helpers.cross_entropy_high_precision(logits, labels)
 
+# NOTE copied from ../resnet_train.py in 43573d078f86e5b1adbfbd6feeb965bba84cd547
+def compute_grad_norm(grad):
+    return torch.norm(grad, p=2).item() if grad is not None else None
+def get_grad_norms(model):
+    return {name: compute_grad_norm(param.grad) for name, param in model.named_parameters()}
 
 class Trainer:
     '''TODO
@@ -504,10 +509,11 @@ class Trainer:
             # TODO is this ok? this was np.log, and it was barking at me ; i think np.log was being interpreted as a logging module
             print(f'Epoch {epoch}, train loss {t.log(train_loss).item():.4f}, test loss {t.log(test_loss).item():.4f}')
         train_loss.backward()
+        gradient_norms = get_grad_norms(model)
         self.optimizer.step()
         self.scheduler.step()
         self.optimizer.zero_grad()
-        return train_loss, test_loss
+        return train_loss, test_loss, gradient_norms
 
     def initial_save_if_appropriate(self):
         if self.config.save_models:
@@ -592,7 +598,7 @@ def train_model(config: Config):
     world.initial_save_if_appropriate()
 
     for epoch in range(config.num_epochs):
-        train_loss, test_loss = world.do_a_training_step(epoch)
+        train_loss, test_loss, gradient_norms = world.do_a_training_step(epoch)
         if test_loss.item() < config.stopping_thresh:
             break
         if config.is_it_time_to_save(epoch = epoch):
@@ -600,6 +606,8 @@ def train_model(config: Config):
             world.save_epoch(epoch = epoch)
         if config.is_it_time_to_take_metrics(epoch = epoch):
             world.take_metrics(epoch = epoch, train = world.train)
+        if config.it_is_time_to_save_gradients(epoch = epoch):
+            world.save_gradients(epoch=epoch, train=world.train)
 
     world.post_training_save(save_optimizer_and_scheduler=True)
     helpers.lines([world.train_losses, world.test_losses], labels=['train', 'test'], log_y=True)

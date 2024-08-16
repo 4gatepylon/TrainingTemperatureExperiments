@@ -168,3 +168,5 @@ data/
 results/
 
 .DS_Store
+
+**/random.pdf

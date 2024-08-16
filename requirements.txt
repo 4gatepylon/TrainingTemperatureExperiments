@@ -3,3 +3,10 @@ torchvision
 matplotlib
 numpy
 tqdm
+notebook
+jupyterlab
+ipython
+einops
+pandas
+plotly
+kaleido
