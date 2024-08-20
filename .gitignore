@@ -164,7 +164,11 @@ cython_debug/
 # Resnet and training stuff
 *.pt
 *.pth
+**/*.pt
+**/*.pth
 data/
 results/
-
+**/data/
+**/results/
 .DS_Store
+**/.DS_Store
