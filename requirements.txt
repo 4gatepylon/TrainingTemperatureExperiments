@@ -1,5 +1,26 @@
+# Basically, you should copy: https://github.com/callummcdougall/ARENA_3.0/blob/main/requirements.txt
 torch
 torchvision
+torchaudio
 matplotlib
 numpy
 tqdm
+transformer_lens
+circuitsvis
+plotly
+ipython
+einops
+notebook
+datasets
+jupyter
+matplotlib
+scikit-learn
+wandb
+tensorboard
+jaxtyping
+torchtyping
+tiktoken
+frozendict
+torchinfo
+openai
+pydantic

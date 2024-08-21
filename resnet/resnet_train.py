@@ -53,27 +53,36 @@ def get_grad_norms(model):
     return {name: compute_grad_norm(param.grad) for name, param in model.named_parameters()}
 
 # Training loop
-num_epochs = 20
+num_epochs = 800
+epoch_size = 0
 for epoch in range(num_epochs):
     running_loss = 0.0
+    print("*"*100)
+    print(f"Epoch {epoch}")
+    if epoch == 2:
+        # ay lmao
+        with open(results_path / "epoch_size.txt", "w") as f:
+            f.write(f"epoch size {epoch_size}\n")
     for i, data in enumerate(trainloader, 0):
+        epoch_size = max(epoch_size, i)
         inputs, labels = data[0].to(device), data[1].to(device)
         
         optimizer.zero_grad()
         outputs = model(inputs)
         loss = criterion(outputs, labels)
         loss.backward()
-        grad_norms = get_grad_norms(model)
-        results_file = results_path / f"gradients_norms_{epoch}_{i}.pt"
-        torch.save(grad_norms, results_file)
+        if i % 20 == 19:
+            print(f"\t Saving grad norms at step {i}")
+            grad_norms = get_grad_norms(model)
+            results_file = results_path / f"gradients_norms_{epoch}_{i}.pt"
+            torch.save(grad_norms, results_file)
         optimizer.step()
         
         running_loss += loss.item()
         if i % 200 == 199:
-            print(f'[{epoch + 1}, {i + 1:5d}] loss: {running_loss / 200:.3f}')
+            print(f'\t [{epoch + 1}, {i + 1:5d} / {epoch_size}] loss: {running_loss / 200:.3f}')
             running_loss = 0.0
 
 print('Finished Training')
-
 # Save the trained model
 torch.save(model.state_dict(), 'resnet18_cifar10.pth')
