@@ -14,7 +14,7 @@ from collections import defaultdict
 from datetime import datetime
 
 # Directory where gradient norms are saved
-grad_norms_dir = Path('results') /'2024-08-15-21-45-30'
+grad_norms_dir = Path('results') /'gradients' / '2024-08-21-22-01-06' # '2024-08-21-20-05-12' # NOTE this changes sometimes
 
 def exponential_moving_average(data, alpha):
     """
@@ -43,21 +43,32 @@ def visualize_grad_norms(grad_norms_dir: Path, ems_alphas: list[float]):
 
         def grad_norm_fname(fname: str) -> tuple[int, int]:
             # key: i.e. gradients_norms_0_6.pt => (0, 6)
-            _, b, c = fname.rsplit('_', 2)
+            try:
+                _, b, c = fname.rsplit('_', 2)
+            except Exception as e:
+                print(fname)
+                raise e
             x = int(b)
             y = int(c.split('.')[0])
             return x, y
 
-        filename_tuples = [grad_norm_fname(x) for x in os.listdir(grad_norms_dir)]
+        fs = os.listdir(grad_norms_dir)
+        _ = len(fs)
+        fs = [f for f in fs if "epoch_size" not in f]
+        filename_tuples = [grad_norm_fname(x) for x in fs]
+        # This is all sanity shit that isn't really too necessary
         # mn = min(max[x for _, x in filename_tuples])
-        mx = max([x for _, x in filename_tuples])
-        count = max([x for x, _ in filename_tuples]) + 1
-        # assert mn == mx, f"Min: {mn}, Max: {mx}"
-        assert count >= 1
-        assert len(filename_tuples) == (mx+1) * count, f"Expected {mx * count} filenames, got {len(filename_tuples)}: {sorted(set(filename_tuples) - set([(y, x) for x in range(mx) for y in range(count)]))}"
+        # mx = max([x for _, x in filename_tuples])
+        # mx = 390 # Kind of a hack :P
+        # count = max([x for x, _ in filename_tuples]) + 1
+        # # assert mn == mx, f"Min: {mn}, Max: {mx}"
+        # assert count >= 1
+        # assert len(filename_tuples) == (mx+1) * count, f"Expected {mx * count} filenames, got {len(filename_tuples)}: {sorted(set(filename_tuples) - set([(y, x) for x in range(mx) for y in range(count)]))}"
         # print(filename_tuples)
         # Collect gradient norms
-        for filename in tqdm.tqdm(sorted(os.listdir(grad_norms_dir), key=grad_norm_fname)):
+        
+        assert len(fs) == _ - 1
+        for filename in tqdm.tqdm(sorted(fs, key=grad_norm_fname)):
             if filename.endswith('.pt'):
                 file_path = os.path.join(grad_norms_dir, filename)
                 grad_norms = torch.load(file_path)
@@ -98,5 +109,6 @@ if __name__ == "__main__":
     # EMA smoothing factor
     # Around 0.01 - 0.1 is best
     # ema_alphas = [0.0001, 0.001, 0.01, 0.1, 0.5, 0.8, 0.9, 0.99, 0.999, 0.9999, None] # Bigger = less smoothing
-    ema_alphas = [0.005, 0.01, 0.015, 0.02, 0.025, 0.03, 0.035, 0.04, 0.045, 0.05] # For smoothing that is better
+    # ema_alphas = [0.005, 0.01, 0.015, 0.02, 0.025, 0.03, 0.035, 0.04, 0.045, 0.05] # For smoothing that is better
+    ema_alphas = [None, 0.08, 0.15]
     visualize_grad_norms(grad_norms_dir, ema_alphas)
